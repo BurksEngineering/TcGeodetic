@@ -1,0 +1,227 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="GeoPosition" Id="{3af11355-6297-45a2-81e7-e3ba8de80095}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+Geographic Position
+----------------
+
+Overview
+================
+
+Represents a geodetic (or geocentric) position with latitude, longitude, and elevation (above the ellipsoid).
+*)
+FUNCTION_BLOCK GeoPosition
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	Latitude_  : LREAL;//radians north of equator
+	Longitude_ : LREAL;//radians east of meridian
+	Elevation_ : LREAL;//m above ellipsoid
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Folder Name="Comparators" Id="{a6df49ec-8996-434d-9ba6-f07e8fb8b6b7}" />
+    <Folder Name="Properties" Id="{b7cf4284-fe56-4c36-a038-6435990ba7af}" />
+    <Folder Name="Setters" Id="{077d5114-78fa-4704-a6c3-9977056cbc5a}" />
+    <Property Name="Elevation" Id="{0a35baa3-1998-4c15-9742-43e0b8bbadf6}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY PUBLIC Elevation : LREAL]]></Declaration>
+      <Get Name="Get" Id="{046cc5ea-a770-421a-bb1f-ad84db69148c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Elevation := Elevation_;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{726bd732-8e27-4780-9d0c-f34f7df65e50}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Elevation_ := Elevation;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="IsEqual" Id="{f18eb5d7-5a74-4649-8b7c-157f6655d827}" FolderPath="Comparators\">
+      <Declaration><![CDATA[METHOD PUBLIC IsEqual : BOOL
+VAR_INPUT
+	P : REFERENCE TO GeoPosition;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IsEqual := IsNearlyEqual(P,0.0);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="IsNearlyEqual" Id="{aa31bf7f-c28c-42b9-bc7f-9674c88e4763}" FolderPath="Comparators\">
+      <Declaration><![CDATA[METHOD PUBLIC IsNearlyEqual : BOOL
+VAR_INPUT
+	P : REFERENCE TO GeoPosition;
+	Precision : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IsNearlyEqual := ABS(P.LatitudeRad 		- LatitudeRad) 	<= Precision
+             AND ABS(P.LongitudeRad 	- LongitudeRad) <= Precision
+             AND ABS(P.Elevation 		- Elevation)	<= Precision;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="LatitudeDeg" Id="{ca76519e-ec08-4b92-86d5-8bcb86ec81ef}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY PUBLIC LatitudeDeg : LREAL]]></Declaration>
+      <Get Name="Get" Id="{34bf9114-ffeb-42d1-9415-01337a15b981}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LatitudeDeg := 180.0 * Latitude_ /PI;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{3a8c8ca2-ee71-4ba5-9e46-f592f7f30627}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Latitude_ := PI * LatitudeDeg / 180.0;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="LatitudeRad" Id="{57917cbc-cae3-41ce-9a84-b7df5edb7322}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY PUBLIC LatitudeRad : LREAL]]></Declaration>
+      <Get Name="Get" Id="{ff87d137-9a83-4d69-93dc-8e2ad76693b0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LatitudeRad := Latitude_;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{7eca666d-736b-42b7-8bbc-aabcb2c49d4a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Latitude_ := LatitudeRad;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="LongitudeDeg" Id="{2bd865c8-e687-4487-b76e-c00ac3f628fc}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY PUBLIC LongitudeDeg : LREAL]]></Declaration>
+      <Get Name="Get" Id="{9d388086-5deb-44a5-b974-2d9a55d286a9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LongitudeDeg := 180.0 * Longitude_ /PI;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{5f0c9740-65c9-43c6-bbaf-f8b117ca798b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Longitude_ := PI * LongitudeDeg / 180.0;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="LongitudeRad" Id="{b3ce4649-d336-472a-9c47-bffc37a3d5f5}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY PUBLIC LongitudeRad : LREAL]]></Declaration>
+      <Get Name="Get" Id="{30e343d8-81a8-447c-afee-33ee57b92e1c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LongitudeRad := Longitude_;
+]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{65ac29d7-4868-4ca1-abba-72a48c6488f9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Longitude_ := LongitudeRad;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="SetFromComponentsDeg" Id="{099b43f1-0625-4eba-84e3-19e82a3583b2}" FolderPath="Setters\">
+      <Declaration><![CDATA[METHOD PUBLIC SetFromComponentsDeg
+VAR_INPUT
+	Lat : LREAL;
+	Lon : LREAL;
+	El : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[LatitudeDeg := Lat;
+LongitudeDeg := Lon;
+Elevation := El;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetFromComponentsRad" Id="{871b1570-e35a-48e7-acc1-bc64e9846475}" FolderPath="Setters\">
+      <Declaration><![CDATA[METHOD PUBLIC SetFromComponentsRad
+VAR_INPUT
+	Lat : LREAL;
+	Lon : LREAL;
+	El : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[LatitudeRad := Lat;
+LongitudeRad := Lon;
+Elevation := El;]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="GeoPosition">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.Elevation.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.Elevation.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.IsEqual">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.IsNearlyEqual">
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="1" />
+    </LineIds>
+    <LineIds Name="GeoPosition.LatitudeDeg.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.LatitudeDeg.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.LatitudeRad.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.LatitudeRad.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.LongitudeDeg.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.LongitudeDeg.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.LongitudeRad.Get">
+      <LineId Id="2" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.LongitudeRad.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.SetFromComponentsDeg">
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="1" />
+    </LineIds>
+    <LineIds Name="GeoPosition.SetFromComponentsRad">
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="1" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

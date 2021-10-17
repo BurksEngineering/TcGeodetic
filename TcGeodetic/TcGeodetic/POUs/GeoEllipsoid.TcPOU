@@ -1,0 +1,321 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="GeoEllipsoid" Id="{5fa9ec91-c8df-4619-93de-f428fe8da353}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+Geodetic Ellipsoid
+----------------
+
+Overview
+================
+
+Represents a geodetic reference ellipsoid (but not a geodetic datum). Contains functions for transitioning between latitude/longitude and XYZ coordinates.
+
+To access standard ellipsoids use the GVL 'GeoEllipsoids'.	They cannot be copied, but you can use REFERENCE TO types to keep a shorthand copy somewhere.
+
+.. note:: When creating an instance of this FB you *must* provide the name, semimajor axis, and flattening due to the use of FB_init parameters.
+*)
+{attribute 'no_assign'}
+FUNCTION_BLOCK GeoEllipsoid
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	Name_ : T_MaxString;
+	SemiMajorAxis_ : LREAL;
+	Flattening_ : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Folder Name="Helpers" Id="{b81f80d4-2bbb-4268-8ddd-c7326c54d401}" />
+    <Folder Name="Properties" Id="{b4f92432-ea7a-4ff4-815d-4808dee4ca34}" />
+    <Folder Name="Protected" Id="{d95a2200-fe2b-4706-b87d-15a39d09296c}" />
+    <Method Name="FB_init" Id="{356473b9-f5c8-4741-9e86-0658e3600f83}">
+      <Declaration><![CDATA[METHOD FB_init : BOOL
+VAR_INPUT
+	bInitRetains : BOOL; // if TRUE, the retain variables are initialized (warm start / cold start)
+	bInCopyCode : BOOL;  // if TRUE, the instance afterwards gets moved into the copy code (online change)
+	
+	eName : T_MaxString;
+	eSemiMajorAxis : LREAL;//meters
+	eFlattening : LREAL;//very small number
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Name_ := eName;
+SemiMajorAxis_ := eSemiMajorAxis;
+Flattening_ := eFlattening;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Flattening" Id="{34b2fe7f-e49d-4b2c-8e6e-38d008c42ac1}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY PUBLIC Flattening : LREAL]]></Declaration>
+      <Get Name="Get" Id="{5861998b-a1c7-428b-b4da-036da0771533}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Flattening := Flattening_;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="GetCartesianFromGeodetic" Id="{3dee90e0-402c-4ec5-8ec8-6eb06ee928ca}" FolderPath="Helpers\">
+      <Declaration><![CDATA[METHOD PUBLIC GetCartesianFromGeodetic : Vector3
+VAR_INPUT
+	P : REFERENCE TO GeoPosition;
+END_VAR
+VAR
+	N : LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[N := GetNormalRadiusOfCurvature(P.LatitudeRad);
+
+GetCartesianFromGeodetic.X := (N + P.Elevation) * COS(P.LatitudeRad) * COS(P.LongitudeRad);
+GetCartesianFromGeodetic.Y := (N + P.Elevation) * COS(P.LatitudeRad) * SIN(P.LongitudeRad);
+GetCartesianFromGeodetic.Z := ((1.0 - GetEccentricitySquared())*N + P.Elevation) * SIN(P.LatitudeRad); ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetEccentricitySquared" Id="{dcf07e5e-00c3-480f-9648-fb9fcd18870b}" FolderPath="Protected\">
+      <Declaration><![CDATA[METHOD PROTECTED GetEccentricitySquared : LREAL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetEccentricitySquared := (2.0-Flattening)*Flattening;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetGeocentricLatitude" Id="{7fa6146d-71cd-4c31-88c4-e5b241b37441}" FolderPath="Protected\">
+      <Declaration><![CDATA[METHOD PROTECTED GetGeocentricLatitude : LREAL//radians
+VAR_INPUT
+	GeodeticLatitude : LREAL;//radians
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetGeocentricLatitude := ATAN((1-Flattening_) * (1-Flattening_)*TAN(GeodeticLatitude));]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetGeodeticFromCartesian" Id="{9f899f33-9489-4cc0-a19d-4c589c0cda4f}" FolderPath="Helpers\">
+      <Declaration><![CDATA[METHOD PUBLIC GetGeodeticFromCartesian : GeoPosition
+VAR_INPUT
+	V : REFERENCE TO Vector3;
+END_VAR
+VAR
+	aeps2 : LREAL := SemiMajorAxis_ * SemiMajorAxis_ * 1E-32;
+	e2 : LREAL := (2.0 - Flattening_) * Flattening_;
+	e4t : LREAL := e2 * e2 * 1.5;
+	ep2 : LREAL := 1.0 - e2;
+	ep : LREAL := SQRT(ep2);
+	aep : LREAL := SemiMajorAxis_*ep;
+	
+	p2 : LREAL;
+	absz : LREAL;
+	p : LREAL;
+	s0 : LREAL;
+	pn : LREAL;
+	zp : LREAL;
+	
+	c0 : LREAL;
+	c02 : LREAL;
+	c03 : LREAL;
+	s02 : LREAL;
+	s03 : LREAL;
+	a02 : LREAL;
+	a0 : LREAL;
+	a03 : LREAL;
+	d0 : LREAL;
+	f0 : LREAL;
+	b0 : LREAL;
+	s1 : LREAL;
+	cp : LREAL;
+	s12 : LREAL;
+	cp2 : LREAL;
+	
+	
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//stolen from : https://github.com/xanthospap/ggeodesy/blob/master/src/car2ell.hpp#L79
+
+p2 := V.X* V.X + V.Y*V.Y;
+IF p2 = 0 THEN
+	GetGeodeticFromCartesian.LongitudeRad := 0;//indetermiante at the poles
+ELSE
+	GetGeodeticFromCartesian.LongitudeRad := BASIC.ATAN2(V.Y,V.X);
+END_IF
+
+absz := ABS(V.Z);
+
+//case when sufficiently far from pole
+IF (p2 > aeps2) THEN
+	p := SQRT(p2);
+	s0 := absz / SemiMajorAxis_;
+	pn := p / SemiMajorAxis_;
+	zp := ep * s0;
+	c0 := ep * pn;
+	c02 := c0 * c0;
+	c03 := c02 * c0;
+	s02 := s0 * s0;
+	s03 := s02 * s0;
+	a02 := c02 + s02;
+	a0 := SQRT(a02);
+	a03 := s02 * a0;
+	d0 := zp * a03 - e2 * s03;
+	f0 := pn * a03 - e2 * c03;
+	b0 := e4t * s02 * c02 * pn * (a0 - ep);
+	s1 := d0 * f0 - b0 * s0;
+	cp := ep * (f0 * f0 - b0 * c0);
+	
+	GetGeodeticFromCartesian.LatitudeRad := ATAN(s1/cp);
+ 	s12 := s1 * s1;
+	cp2 := cp * cp;
+	GetGeodeticFromCartesian.Elevation := (p * cp + absz * s1 - SemiMajorAxis_*sqrt(ep2*s12+cp2)) / sqrt(s12+cp2);
+	
+//case when very near a pole
+ELSE
+	GetGeodeticFromCartesian.LatitudeRad := PI/2;
+	GetGeodeticFromCartesian.Elevation := absz - aep;
+END_IF
+
+
+//restore sign of z
+IF V.Z < 0 THEN
+	GetGeodeticFromCartesian.LatitudeRad := GetGeodeticFromCartesian.LatitudeRad * -1;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetNormalRadiusOfCurvature" Id="{1cc8408c-a28c-42ab-bd8d-21272b17e8e7}" FolderPath="Protected\">
+      <Declaration><![CDATA[METHOD PROTECTED GetNormalRadiusOfCurvature : LREAL
+VAR_INPUT
+	lat : LREAL;//radians
+END_VAR
+VAR
+	acosf : LREAL;
+	bcosf : LREAL;
+	den : LREAL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[acosf := SemiMajorAxis * COS(lat);
+bcosf := GetSemiMinorAxis() * SIN(lat);
+den := SQRT(acosf*acosf + bcosf*bcosf);
+IF den = 0 THEN
+	GetNormalRadiusOfCurvature := 0;
+	ADSLOGSTR(ADSLOG_MSGTYPE_WARN,'GeodeticPosition::GetNormalRadiusOfCurvature Divide By Zero attempt in reference ellipsoid %s',Name);
+	RETURN;
+END_IF
+GetNormalRadiusOfCurvature := SemiMajorAxis*SemiMajorAxis/den; ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetSemiMinorAxis" Id="{10667ac4-3728-46cd-b99e-93e77afe5ab6}" FolderPath="Protected\">
+      <Declaration><![CDATA[METHOD PROTECTED GetSemiMinorAxis : LREAL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetSemiMinorAxis := SemiMajorAxis * (1-Flattening);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetTangentEnuTransform" Id="{a5892b07-6af9-48fe-b43a-dae14b491220}" FolderPath="Helpers\">
+      <Declaration><![CDATA[METHOD PUBLIC GetTangentEnuTransform : HMatrix
+VAR_INPUT
+	P : GeoPosition;
+END_VAR
+VAR
+	R_ENU : RMatrix;
+	R_Lon : Rmatrix;
+	R_Lat : Rmatrix;
+	V : Vector3;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//ECEF has X as 'up',   y as 'east',  Z as 'north' as lat=lon=0, translated to surface
+//ENU  has X as 'east', y as 'north', z as 'up'
+//therefore, the base rotation (ignoring lat/lon changes) should be: (projecting ENU unit vecotrs onto ECEF CS)
+// [  0   0   1
+//    1   0   0
+//    0   1   0   ]
+
+R_ENU.FillTrapezoidal(0,0,0);
+R_ENU.SetRC(1,0,1);
+R_ENU.SetRC(2,1,1);
+R_ENU.SetRC(0,2,1);
+
+
+R_Lon.SetFromAngleDim(P.LongitudeRad,1);//positive rotation around north (Y)
+R_Lat.SetFromAngleDim(-1*P.LatitudeRad,0);//negative rotation around east (X)
+
+R_ENU.RotateBy(R_Lon);
+R_ENU.RotateBy(R_Lat);
+V := GetCartesianFromGeodetic(P);
+
+GetTangentEnuTransform.SetFromComponents(R_ENU,V);]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Name" Id="{11b38d1a-0e13-4252-824e-6e3d0a3d3677}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY PUBLIC Name : T_MaxString]]></Declaration>
+      <Get Name="Get" Id="{dcb313e4-5062-49e4-b4c0-aa22e54019b5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Name := Name_;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="SemiMajorAxis" Id="{a8d72ca4-bbbb-4088-a6eb-591ebbd96221}" FolderPath="Properties\">
+      <Declaration><![CDATA[//meters
+PROPERTY PUBLIC SemiMajorAxis : LREAL]]></Declaration>
+      <Get Name="Get" Id="{7f8fad21-a403-4c2d-bed6-8bb7db93b188}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SemiMajorAxis := SemiMajorAxis_;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="GeoEllipsoid">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.FB_init">
+      <LineId Id="7" Count="0" />
+      <LineId Id="12" Count="1" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.Flattening.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.GetCartesianFromGeodetic">
+      <LineId Id="30" Count="3" />
+      <LineId Id="17" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.GetEccentricitySquared">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.GetGeocentricLatitude">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.GetGeodeticFromCartesian">
+      <LineId Id="162" Count="45" />
+      <LineId Id="62" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.GetNormalRadiusOfCurvature">
+      <LineId Id="5" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="13" Count="2" />
+      <LineId Id="17" Count="1" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="11" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.GetSemiMinorAxis">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.GetTangentEnuTransform">
+      <LineId Id="180" Count="19" />
+      <LineId Id="22" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.Name.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.SemiMajorAxis.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

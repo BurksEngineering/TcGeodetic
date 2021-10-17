@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <GVL Name="GeoEllipsoids" Id="{6d75c4c9-9a1b-44db-87f6-833a3640712e}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	WGS84 : GeoEllipsoid('WGS-84', 6378137.0, 1.0 / 298.257223563);
+	GRS80 : GeoEllipsoid('GRS-80', 6378137.0, 1.0 / 298.257222101);
+	PZ90 :  GeoEllipsoid('PZ-90' , 6378136.0, 1.0 / 298.257839303);
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

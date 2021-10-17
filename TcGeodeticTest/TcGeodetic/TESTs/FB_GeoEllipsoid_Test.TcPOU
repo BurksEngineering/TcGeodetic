@@ -1,0 +1,203 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_GeoEllipsoid_Test" Id="{2c826b29-42af-412b-b9f6-6027132ceddb}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_GeoEllipsoid_Test EXTENDS FB_TestSuite
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[WhenReferenceConstantExpectItExists();
+WhenGetCartesianExpectValue();
+WhenGetGeodeticExpectValue();
+WhenTransformEnuExpectValue();]]></ST>
+    </Implementation>
+    <Method Name="WhenGetCartesianExpectValue" Id="{b09fafe1-6b82-4288-9315-605ef0b78999}">
+      <Declaration><![CDATA[METHOD PRIVATE WhenGetCartesianExpectValue
+VAR_INPUT
+	
+END_VAR
+VAR
+	PX : GeoPosition;
+	PY : GeoPosition;
+	PZ : GeoPosition;
+	VX : Vector3;
+	VY : Vector3;
+	VZ : Vector3;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('WhenGetCartesianExpectValue');
+
+// @TEST-RUN
+PX.SetFromComponentsDeg(0,0,1);
+PY.SetFromComponentsDeg(0,90,1);
+PZ.SetFromComponentsDeg(90,0,1);
+VX := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PX);
+VY := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PY);
+VZ := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PZ);
+
+// @TEST-ASSERT
+AssertTrue(VX.X = GeoEllipsoids.WGS84.SemiMajorAxis+1, 'X axis check does not work');
+AssertTrue(VY.Y = GeoEllipsoids.WGS84.SemiMajorAxis+1, 'Y axis check does not work');
+AssertTrue(VZ.Z = (1-GeoEllipsoids.WGS84.Flattening)*GeoEllipsoids.WGS84.SemiMajorAxis +1, 'Z axis check does not work');
+
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="WhenGetGeodeticExpectValue" Id="{05fd3b87-4737-431f-a99d-4d1552991f37}">
+      <Declaration><![CDATA[METHOD PRIVATE WhenGetGeodeticExpectValue
+VAR_INPUT
+	
+END_VAR
+VAR
+	PX : GeoPosition;
+	PY : GeoPosition;
+	PZ : GeoPosition;
+	VX : Vector3;
+	VY : Vector3;
+	VZ : Vector3;
+	PX2 : GeoPosition;
+	PY2 : GeoPosition;
+	PZ2 : GeoPosition;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('WhenGetGeodeticExpectValue');
+
+// @TEST-RUN
+PX.SetFromComponentsDeg(0,0,1);
+PY.SetFromComponentsDeg(0,90,1);
+PZ.SetFromComponentsDeg(90,0,1);
+VX := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PX);
+VY := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PY);
+VZ := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PZ);
+PX2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VX);
+PY2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VY);
+PZ2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VZ);
+
+// @TEST-ASSERT
+AssertTrue(PX.IsNearlyEqual(PX2,1E-6), 'X axis check does not work');
+AssertTrue(PY.IsNearlyEqual(PY2,1E-6), 'Y axis check does not work');
+AssertTrue(PZ.IsNearlyEqual(PZ2,1E-6), 'Z axis check does not work');
+
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="WhenReferenceConstantExpectItExists" Id="{4b7e9965-97b5-43a8-81ef-de5a019d91ff}">
+      <Declaration><![CDATA[METHOD PRIVATE WhenReferenceConstantExpectItExists
+VAR_INPUT
+END_VAR
+VAR
+	WGS84 : REFERENCE TO GeoEllipsoid;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('WhenReferenceConstantExpectItExists');
+
+// @TEST-RUN
+WGS84 REF=  GeoEllipsoids.WGS84;
+
+// @TEST-ASSERT
+AssertTrue(WGS84.SemiMajorAxis = 6378137, 'semi major axis not right');
+AssertTrue(WGS84.Flattening = 1.0 / 298.257223563, 'flattening not right');
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="WhenTransformEnuExpectValue" Id="{b7da807a-920e-457d-8e20-a816d1108f30}">
+      <Declaration><![CDATA[METHOD PRIVATE WhenTransformEnuExpectValue
+VAR_INPUT
+	
+END_VAR
+VAR
+	Psurf : GeoPosition;
+	Palt : GeoPosition;
+	Vsurf : Vector3;
+	Valt : Vector3;
+	Valt_surf : Vector3;
+	Hsurf : HMatrix;
+	Valt2 : Vector3;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('WhenTransformEnuExpectValue');
+
+// @TEST-RUN
+Psurf.SetFromComponentsDeg(0,0,0);
+Palt.SetFromComponentsDeg(PSurf.LatitudeDeg,PSurf.LongitudeDeg,0);
+Valt_surf.SetFromComponents(0,0,Palt.Elevation);
+
+Vsurf := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(Psurf);
+Valt := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(Palt);
+Hsurf := GeoEllipsoids.WGS84.GetTangentEnuTransform(Psurf);
+Valt2 := Hsurf.GetTransformedVector3(Valt_surf);
+
+// @TEST-ASSERT
+AssertTrue(Valt.IsNearlyEqual(Valt2,1E-6), 'transformation did not work');
+
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_GeoEllipsoid_Test">
+      <LineId Id="31" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="32" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_GeoEllipsoid_Test.WhenGetCartesianExpectValue">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="33" Count="4" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="38" Count="1" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="6" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_GeoEllipsoid_Test.WhenGetGeodeticExpectValue">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="33" Count="4" />
+      <LineId Id="55" Count="2" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="38" Count="1" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="6" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_GeoEllipsoid_Test.WhenReferenceConstantExpectItExists">
+      <LineId Id="6" Count="2" />
+      <LineId Id="12" Count="2" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_GeoEllipsoid_Test.WhenTransformEnuExpectValue">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="82" Count="1" />
+      <LineId Id="80" Count="1" />
+      <LineId Id="84" Count="1" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="6" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

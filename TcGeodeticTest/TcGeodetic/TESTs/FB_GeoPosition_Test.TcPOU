@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="FB_GeoPosition_Test" Id="{9c8846f8-6574-4c98-87c7-35162f85ac9e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_GeoPosition_Test EXTENDS FB_TestSuite
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[WhenValuesSetExpectValuesRetained();]]></ST>
+    </Implementation>
+    <Method Name="WhenValuesSetExpectValuesRetained" Id="{2d895917-8468-4b71-bf91-ddd149f04fe2}">
+      <Declaration><![CDATA[METHOD PRIVATE WhenValuesSetExpectValuesRetained
+VAR_INPUT
+	
+END_VAR
+VAR
+	P1 : GeoPosition;
+	P1b : GeoPosition;
+	P2 : GeoPosition;
+	P3 : GeoPosition;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('WhenValuesSetExpectValuesRetained');
+
+// @TEST-RUN
+P1.SetFromComponentsRad(PI,PI,1);
+P1b.SetFromComponentsRad(PI,PI,1);
+P2 := P1;
+P3.SetFromComponentsDeg(180,180,1);
+
+// @TEST-ASSERT
+AssertTrue(P1.IsEqual(P1b), 'equals check does not work');
+AssertTrue(P1.IsEqual(P3),'radians and degrees do not agree');
+AssertTrue(P2.LatitudeDeg > 179.99,'latitude not retained');
+AssertTrue(P2.LongitudeDeg > 179.99,'longitude not retained');
+AssertTrue(P2.Elevation = 1,'elevation not retained');
+
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_GeoPosition_Test">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_GeoPosition_Test.WhenValuesSetExpectValuesRetained">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="17" Count="2" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="6" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

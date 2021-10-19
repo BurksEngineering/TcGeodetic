@@ -101,85 +101,48 @@ VAR_INPUT
 	V : REFERENCE TO Vector3;
 END_VAR
 VAR
-	aeps2 : LREAL := SemiMajorAxis_ * SemiMajorAxis_ * 1E-32;
-	e2 : LREAL := (2.0 - Flattening_) * Flattening_;
-	e4t : LREAL := e2 * e2 * 1.5;
-	ep2 : LREAL := 1.0 - e2;
-	ep : LREAL := SQRT(ep2);
-	aep : LREAL := SemiMajorAxis_*ep;
-	
-	p2 : LREAL;
-	absz : LREAL;
-	p : LREAL;
-	s0 : LREAL;
-	pn : LREAL;
-	zp : LREAL;
-	
-	c0 : LREAL;
-	c02 : LREAL;
-	c03 : LREAL;
-	s02 : LREAL;
-	s03 : LREAL;
-	a02 : LREAL;
-	a0 : LREAL;
-	a03 : LREAL;
-	d0 : LREAL;
-	f0 : LREAL;
-	b0 : LREAL;
-	s1 : LREAL;
-	cp : LREAL;
-	s12 : LREAL;
-	cp2 : LREAL;
-	
-	
+	RadLatitude_2 : LREAL;// 		'Q^2' 		from paper
+	Magnitude_2 : LREAL;// 			'r^2' 		from paper
+	Eccentricity_2 : LREAL;// 		'E^2' 		from paper
+	AdjustedMag_2 : LREAL;// 		'r^2 - E^2' from paper
+	SemiMinorConfocal_2 : LREAL;// 	'u^2' 		from paper
+	SemiMajorConfocal_2 : LREAL;// 	'u^2' + E^2 from paper
+	GeocentricLatitude : LREAL;//   'beta' 		from paper
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[//stolen from : https://github.com/xanthospap/ggeodesy/blob/master/src/car2ell.hpp#L79
+        <ST><![CDATA[//stolen from : http://ir.lib.ncku.edu.tw/bitstream/987654321/39750/1/3011200501001.pdf
+//error is <1mm for anything within 100km of the surface of the earth
 
-p2 := V.X* V.X + V.Y*V.Y;
-IF p2 = 0 THEN
-	GetGeodeticFromCartesian.LongitudeRad := 0;//indetermiante at the poles
+RadLatitude_2 := V.X*V.X + V.Y*V.Y;
+Magnitude_2 := RadLatitude_2 + V.Z* V.Z;
+
+//right at pole longitude is indetermiante
+IF RadLatitude_2 = 0 THEN
+	GetGeodeticFromCartesian.LongitudeRad := 0;
 ELSE
-	GetGeodeticFromCartesian.LongitudeRad := BASIC.ATAN2(V.Y,V.X);
+	GetGeodeticFromCartesian.LongitudeRad := atan2(V.Y,V.X);//eq 4c from paper
 END_IF
 
-absz := ABS(V.Z);
-
-//case when sufficiently far from pole
-IF (p2 > aeps2) THEN
-	p := SQRT(p2);
-	s0 := absz / SemiMajorAxis_;
-	pn := p / SemiMajorAxis_;
-	zp := ep * s0;
-	c0 := ep * pn;
-	c02 := c0 * c0;
-	c03 := c02 * c0;
-	s02 := s0 * s0;
-	s03 := s02 * s0;
-	a02 := c02 + s02;
-	a0 := SQRT(a02);
-	a03 := s02 * a0;
-	d0 := zp * a03 - e2 * s03;
-	f0 := pn * a03 - e2 * c03;
-	b0 := e4t * s02 * c02 * pn * (a0 - ep);
-	s1 := d0 * f0 - b0 * s0;
-	cp := ep * (f0 * f0 - b0 * c0);
-	
-	GetGeodeticFromCartesian.LatitudeRad := ATAN(s1/cp);
- 	s12 := s1 * s1;
-	cp2 := cp * cp;
-	GetGeodeticFromCartesian.Elevation := (p * cp + absz * s1 - SemiMajorAxis_*sqrt(ep2*s12+cp2)) / sqrt(s12+cp2);
-	
-//case when very near a pole
+//too close to poles for stuff to work well
+IF RadLatitude_2 < (SemiMajorAxis * SemiMinorAxis * 1E-32) THEN
+	//center of earth...angles dont even matter anymore
+	IF V.Z = 0 THEN
+		GetGeodeticFromCartesian.LatitudeRad := 0;
+		GetGeodeticFromCartesian.Elevation := Magnitude_2;
+	ELSE
+		GetGeodeticFromCartesian.LatitudeRad := PI /2 * V.Z / ABS(V.Z);
+		GetGeodeticFromCartesian.Elevation := ABS(V.Z) - SemiMinorAxis;
+	END_IF;
 ELSE
-	GetGeodeticFromCartesian.LatitudeRad := PI/2;
-	GetGeodeticFromCartesian.Elevation := absz - aep;
-END_IF
+	Eccentricity_2 := SemiMajorAxis*SemiMajorAxis - SemiMinorAxis * SemiMinorAxis;
+	AdjustedMag_2 := Magnitude_2 - Eccentricity_2;
+	SemiMinorConfocal_2 := 0.5*AdjustedMag_2 + 0.5*SQRT(EXPT(AdjustedMag_2,2) + 4*Eccentricity_2*V.Z*V.Z); //eq 4a from paper
+	SemiMajorConfocal_2 := SemiMinorConfocal_2 + Eccentricity_2;
+	GeocentricLatitude := ATAN((SQRT(SemiMajorConfocal_2) * V.Z) / (SQRT(SemiMinorConfocal_2)*SQRT(RadLatitude_2))); //eq 6 from paper
+	
+	GetGeodeticFromCartesian.LatitudeRad := SemiMajorAxis / SemiMinorAxis * GeocentricLatitude;
+	GetGeodeticFromCartesian.Elevation := SQRT(EXPT(V.Z - SemiMinorAxis*SIN(GeocentricLatitude),2) + EXPT(SQRT(RadLatitude_2) - SemiMajorAxis*COS(GeocentricLatitude),2)); //eq 7 from paper
 
-
-//restore sign of z
-IF V.Z < 0 THEN
-	GetGeodeticFromCartesian.LatitudeRad := GetGeodeticFromCartesian.LatitudeRad * -1;
 END_IF]]></ST>
       </Implementation>
     </Method>
@@ -239,8 +202,8 @@ R_ENU.SetRC(2,1,1);
 R_ENU.SetRC(0,2,1);
 
 
-R_Lon.SetFromAngleDim(P.LongitudeRad,1);//positive rotation around north (Y)
-R_Lat.SetFromAngleDim(-1*P.LatitudeRad,0);//negative rotation around east (X)
+R_Lon.SetFromAngle(P.LongitudeRad,Dimension.Y);//positive rotation around north (Y)
+R_Lat.SetFromAngle(-1*P.LatitudeRad,Dimension.X);//negative rotation around east (X)
 
 R_ENU.RotateBy(R_Lon);
 R_ENU.RotateBy(R_Lat);
@@ -272,6 +235,17 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
+    <Property Name="SemiMinorAxis" Id="{c6aadc78-4572-4d9c-8819-d08f87b272c4}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY PUBLIC SemiMinorAxis : LREAL]]></Declaration>
+      <Get Name="Get" Id="{8345bad9-ea91-4c40-9211-991e6f818527}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SemiMinorAxis := SemiMajorAxis*(1-Flattening);]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
     <LineIds Name="GeoEllipsoid">
       <LineId Id="9" Count="0" />
     </LineIds>
@@ -293,8 +267,36 @@ END_VAR
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="GeoEllipsoid.GetGeodeticFromCartesian">
-      <LineId Id="162" Count="45" />
-      <LineId Id="62" Count="0" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="288" Count="0" />
+      <LineId Id="249" Count="0" />
+      <LineId Id="163" Count="0" />
+      <LineId Id="273" Count="0" />
+      <LineId Id="285" Count="0" />
+      <LineId Id="261" Count="1" />
+      <LineId Id="267" Count="1" />
+      <LineId Id="266" Count="0" />
+      <LineId Id="269" Count="0" />
+      <LineId Id="272" Count="0" />
+      <LineId Id="271" Count="0" />
+      <LineId Id="270" Count="0" />
+      <LineId Id="287" Count="0" />
+      <LineId Id="281" Count="1" />
+      <LineId Id="284" Count="0" />
+      <LineId Id="283" Count="0" />
+      <LineId Id="277" Count="0" />
+      <LineId Id="280" Count="0" />
+      <LineId Id="286" Count="0" />
+      <LineId Id="264" Count="0" />
+      <LineId Id="245" Count="0" />
+      <LineId Id="252" Count="0" />
+      <LineId Id="248" Count="0" />
+      <LineId Id="254" Count="1" />
+      <LineId Id="257" Count="0" />
+      <LineId Id="256" Count="0" />
+      <LineId Id="258" Count="0" />
+      <LineId Id="265" Count="0" />
+      <LineId Id="259" Count="0" />
     </LineIds>
     <LineIds Name="GeoEllipsoid.GetNormalRadiusOfCurvature">
       <LineId Id="5" Count="0" />
@@ -315,6 +317,9 @@ END_VAR
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="GeoEllipsoid.SemiMajorAxis.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoEllipsoid.SemiMinorAxis.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
   </POU>

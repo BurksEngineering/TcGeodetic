@@ -59,9 +59,11 @@ VAR
 	PY : GeoPosition;
 	PZ : GeoPosition;
 	VX : Vector3;
+	VXb : Vector3;
 	VY : Vector3;
 	VZ : Vector3;
 	PX2 : GeoPosition;
+	PX2b : GeoPosition;
 	PY2 : GeoPosition;
 	PZ2 : GeoPosition;
 END_VAR
@@ -74,9 +76,12 @@ PX.SetFromComponentsDeg(0,0,1);
 PY.SetFromComponentsDeg(0,90,1);
 PZ.SetFromComponentsDeg(90,0,1);
 VX := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PX);
+VXb := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PX);
+VXb.Z := VXb.Z - 1;//just south of equator
 VY := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PY);
 VZ := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PZ);
 PX2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VX);
+PX2b := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VXb);
 PY2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VY);
 PZ2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VZ);
 
@@ -84,6 +89,8 @@ PZ2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VZ);
 AssertTrue(PX.IsNearlyEqual(PX2,1E-6), 'X axis check does not work');
 AssertTrue(PY.IsNearlyEqual(PY2,1E-6), 'Y axis check does not work');
 AssertTrue(PZ.IsNearlyEqual(PZ2,1E-6), 'Z axis check does not work');
+
+AssertTrue(PX2b.LatitudeRad < 0, 'Small latitude perturbation does not work');
 
 
 TEST_FINISHED();]]></ST>
@@ -166,12 +173,18 @@ TEST_FINISHED();]]></ST>
       <LineId Id="5" Count="0" />
       <LineId Id="7" Count="1" />
       <LineId Id="11" Count="0" />
-      <LineId Id="33" Count="4" />
-      <LineId Id="55" Count="2" />
+      <LineId Id="33" Count="2" />
+      <LineId Id="77" Count="1" />
+      <LineId Id="36" Count="1" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="56" Count="1" />
       <LineId Id="12" Count="0" />
       <LineId Id="10" Count="0" />
       <LineId Id="19" Count="0" />
       <LineId Id="38" Count="1" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="80" Count="0" />
       <LineId Id="13" Count="0" />
       <LineId Id="9" Count="0" />
       <LineId Id="6" Count="0" />

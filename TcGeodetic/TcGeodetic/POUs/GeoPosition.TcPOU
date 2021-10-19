@@ -25,8 +25,21 @@ END_VAR
       <ST><![CDATA[]]></ST>
     </Implementation>
     <Folder Name="Comparators" Id="{a6df49ec-8996-434d-9ba6-f07e8fb8b6b7}" />
+    <Folder Name="Helpers" Id="{a898fd72-c3a8-4eaf-a197-d394a75c64fe}" />
     <Folder Name="Properties" Id="{b7cf4284-fe56-4c36-a038-6435990ba7af}" />
     <Folder Name="Setters" Id="{077d5114-78fa-4704-a6c3-9977056cbc5a}" />
+    <Method Name="CopyFrom" Id="{f42538b2-5d5a-42d4-9831-f395b8a59545}" FolderPath="Setters\">
+      <Declaration><![CDATA[METHOD PUBLIC CopyFrom
+VAR_INPUT
+	P : REFERENCE TO GeoPosition;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Latitude_ := P.LatitudeRad;
+Longitude_ := P.LongitudeRad;
+Elevation_ := P.Elevation;]]></ST>
+      </Implementation>
+    </Method>
     <Property Name="Elevation" Id="{0a35baa3-1998-4c15-9742-43e0b8bbadf6}" FolderPath="Properties\">
       <Declaration><![CDATA[PROPERTY PUBLIC Elevation : LREAL]]></Declaration>
       <Get Name="Get" Id="{046cc5ea-a770-421a-bb1f-ad84db69148c}">
@@ -46,6 +59,26 @@ END_VAR
         </Implementation>
       </Set>
     </Property>
+    <Method Name="GetCartesianPosition" Id="{c912fb69-b38e-4243-9dfa-151630fe823b}" FolderPath="Helpers\">
+      <Declaration><![CDATA[METHOD PUBLIC GetCartesianPosition : Vector3
+VAR_INPUT
+	Ref : REFERENCE TO GeoEllipsoid;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Ref.GetCartesianFromGeodetic(THIS^);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetTangentEnuTransform" Id="{6c9c138d-3993-41c3-ad94-8f80f5c42f1b}" FolderPath="Helpers\">
+      <Declaration><![CDATA[METHOD PUBLIC GetTangentEnuTransform : HMatrix
+VAR_INPUT
+	Ref : REFERENCE TO GeoEllipsoid;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetTangentEnuTransform := Ref.GetTangentEnuTransform(THIS^);]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="IsEqual" Id="{f18eb5d7-5a74-4649-8b7c-157f6655d827}" FolderPath="Comparators\">
       <Declaration><![CDATA[METHOD PUBLIC IsEqual : BOOL
 VAR_INPUT
@@ -146,6 +179,20 @@ END_VAR
         </Implementation>
       </Set>
     </Property>
+    <Method Name="SetFromCartesianPosition" Id="{048ddb8f-7491-418a-a8bf-7b2c0d60621f}" FolderPath="Setters\">
+      <Declaration><![CDATA[METHOD PUBLIC SetFromCartesianPosition
+VAR_INPUT
+	V : REFERENCE TO Vector3;
+	Ref : REFERENCE TO GeoEllipsoid;
+END_VAR
+VAR
+	P : GeoPosition;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[P := Ref.GetGeodeticFromCartesian(V);
+CopyFrom(P);]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="SetFromComponentsDeg" Id="{099b43f1-0625-4eba-84e3-19e82a3583b2}" FolderPath="Setters\">
       <Declaration><![CDATA[METHOD PUBLIC SetFromComponentsDeg
 VAR_INPUT
@@ -177,11 +224,21 @@ Elevation := El;]]></ST>
     <LineIds Name="GeoPosition">
       <LineId Id="9" Count="0" />
     </LineIds>
+    <LineIds Name="GeoPosition.CopyFrom">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="1" />
+    </LineIds>
     <LineIds Name="GeoPosition.Elevation.Get">
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="GeoPosition.Elevation.Set">
       <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.GetCartesianPosition">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.GetTangentEnuTransform">
+      <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="GeoPosition.IsEqual">
       <LineId Id="5" Count="0" />
@@ -214,6 +271,10 @@ Elevation := El;]]></ST>
     </LineIds>
     <LineIds Name="GeoPosition.LongitudeRad.Set">
       <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.SetFromCartesianPosition">
+      <LineId Id="13" Count="0" />
+      <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="GeoPosition.SetFromComponentsDeg">
       <LineId Id="5" Count="0" />

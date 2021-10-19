@@ -13,7 +13,7 @@
 		</System>
 		<Plc>
 			<Project GUID="{6E6B0155-6FB7-4D27-B624-A4AE58C4CD1D}" Name="TcGeodetic" PrjFilePath="TcGeodetic\TcGeodetic.plcproj" TmcFilePath="TcGeodetic\TcGeodetic.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="TcTransformTest\TcTransformTest.tmc">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="TcGeodetic\TcGeodetic.tmc">
 					<Name>TcGeodetic Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Contexts>

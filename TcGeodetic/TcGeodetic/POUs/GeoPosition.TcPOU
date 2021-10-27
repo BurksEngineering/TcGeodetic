@@ -28,6 +28,17 @@ END_VAR
     <Folder Name="Helpers" Id="{a898fd72-c3a8-4eaf-a197-d394a75c64fe}" />
     <Folder Name="Properties" Id="{b7cf4284-fe56-4c36-a038-6435990ba7af}" />
     <Folder Name="Setters" Id="{077d5114-78fa-4704-a6c3-9977056cbc5a}" />
+    <Method Name="Clear" Id="{2886a4c6-65cf-4e4a-8b87-9a8f58659c94}" FolderPath="Setters\">
+      <Declaration><![CDATA[METHOD PUBLIC Clear
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Latitude_ := 0;
+Longitude_ := 0;
+Elevation_ := 0;]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="CopyFrom" Id="{f42538b2-5d5a-42d4-9831-f395b8a59545}" FolderPath="Setters\">
       <Declaration><![CDATA[METHOD PUBLIC CopyFrom
 VAR_INPUT
@@ -66,7 +77,17 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[Ref.GetCartesianFromGeodetic(THIS^);]]></ST>
+        <ST><![CDATA[GetCartesianPosition := Ref.GetCartesianFromGeodetic(THIS^);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetTangentEnuRotation" Id="{0af28ec9-5cf4-4531-856b-f760d4432ef7}" FolderPath="Helpers\">
+      <Declaration><![CDATA[METHOD PUBLIC GetTangentEnuRotation : RMatrix
+VAR_INPUT
+	Ref : REFERENCE TO GeoEllipsoid;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetTangentEnuRotation := Ref.GetTangentEnurotation(THIS^);]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetTangentEnuTransform" Id="{6c9c138d-3993-41c3-ad94-8f80f5c42f1b}" FolderPath="Helpers\">
@@ -182,7 +203,7 @@ END_VAR
     <Method Name="SetFromCartesianPosition" Id="{048ddb8f-7491-418a-a8bf-7b2c0d60621f}" FolderPath="Setters\">
       <Declaration><![CDATA[METHOD PUBLIC SetFromCartesianPosition
 VAR_INPUT
-	V : REFERENCE TO Vector3;
+	V : Vector3;
 	Ref : REFERENCE TO GeoEllipsoid;
 END_VAR
 VAR
@@ -224,6 +245,9 @@ Elevation := El;]]></ST>
     <LineIds Name="GeoPosition">
       <LineId Id="9" Count="0" />
     </LineIds>
+    <LineIds Name="GeoPosition.Clear">
+      <LineId Id="5" Count="2" />
+    </LineIds>
     <LineIds Name="GeoPosition.CopyFrom">
       <LineId Id="5" Count="0" />
       <LineId Id="7" Count="1" />
@@ -235,6 +259,9 @@ Elevation := El;]]></ST>
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="GeoPosition.GetCartesianPosition">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.GetTangentEnuRotation">
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="GeoPosition.GetTangentEnuTransform">

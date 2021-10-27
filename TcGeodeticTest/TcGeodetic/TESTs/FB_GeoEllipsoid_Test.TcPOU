@@ -13,7 +13,8 @@ END_VAR
       <ST><![CDATA[WhenReferenceConstantExpectItExists();
 WhenGetCartesianExpectValue();
 WhenGetGeodeticExpectValue();
-WhenTransformEnuExpectValue();]]></ST>
+WhenTransformEnuAltExpectValue();
+WhenTransformEnulatLonExpectValue();]]></ST>
     </Implementation>
     <Method Name="WhenGetCartesianExpectValue" Id="{b09fafe1-6b82-4288-9315-605ef0b78999}">
       <Declaration><![CDATA[METHOD PRIVATE WhenGetCartesianExpectValue
@@ -58,14 +59,17 @@ VAR
 	PX : GeoPosition;
 	PY : GeoPosition;
 	PZ : GeoPosition;
+	PXYZ : GeoPosition;
 	VX : Vector3;
 	VXb : Vector3;
 	VY : Vector3;
 	VZ : Vector3;
+	VXYZ : Vector3;
 	PX2 : GeoPosition;
 	PX2b : GeoPosition;
 	PY2 : GeoPosition;
 	PZ2 : GeoPosition;
+	PXYZ2 : GeoPosition;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -75,20 +79,24 @@ END_VAR
 PX.SetFromComponentsDeg(0,0,1);
 PY.SetFromComponentsDeg(0,90,1);
 PZ.SetFromComponentsDeg(90,0,1);
+PXYZ.SetFromComponentsDeg(45,45,1000);
 VX := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PX);
 VXb := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PX);
 VXb.Z := VXb.Z - 1;//just south of equator
 VY := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PY);
 VZ := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PZ);
+VXYZ := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(PXYZ);
 PX2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VX);
 PX2b := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VXb);
 PY2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VY);
 PZ2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VZ);
+PXYZ2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VXYZ);
 
 // @TEST-ASSERT
 AssertTrue(PX.IsNearlyEqual(PX2,1E-6), 'X axis check does not work');
 AssertTrue(PY.IsNearlyEqual(PY2,1E-6), 'Y axis check does not work');
 AssertTrue(PZ.IsNearlyEqual(PZ2,1E-6), 'Z axis check does not work');
+AssertTrue(PXYZ.IsNearlyEqual(PXYZ2,1E-6), 'Compound axis check does not work');
 
 AssertTrue(PX2b.LatitudeRad < 0, 'Small latitude perturbation does not work');
 
@@ -116,8 +124,8 @@ AssertTrue(WGS84.Flattening = 1.0 / 298.257223563, 'flattening not right');
 TEST_FINISHED();]]></ST>
       </Implementation>
     </Method>
-    <Method Name="WhenTransformEnuExpectValue" Id="{b7da807a-920e-457d-8e20-a816d1108f30}">
-      <Declaration><![CDATA[METHOD PRIVATE WhenTransformEnuExpectValue
+    <Method Name="WhenTransformEnuAltExpectValue" Id="{b7da807a-920e-457d-8e20-a816d1108f30}">
+      <Declaration><![CDATA[METHOD PRIVATE WhenTransformEnuAltExpectValue
 VAR_INPUT
 	
 END_VAR
@@ -132,11 +140,46 @@ VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[TEST('WhenTransformEnuExpectValue');
+        <ST><![CDATA[TEST('WhenTransformEnuAltExpectValue');
 
 // @TEST-RUN
 Psurf.SetFromComponentsDeg(0,0,0);
-Palt.SetFromComponentsDeg(PSurf.LatitudeDeg,PSurf.LongitudeDeg,0);
+Palt.SetFromComponentsDeg(PSurf.LatitudeDeg,PSurf.LongitudeDeg,1000);
+Valt_surf.SetFromComponents(0,0,Palt.Elevation);
+
+Vsurf := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(Psurf);
+Valt := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(Palt);
+Hsurf := GeoEllipsoids.WGS84.GetTangentEnuTransform(Psurf);
+Valt2 := Hsurf.GetTransformedVector3(Valt_surf);
+
+// @TEST-ASSERT
+AssertTrue(Valt.IsNearlyEqual(Valt2,1E-6), 'transformation did not work');
+
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="WhenTransformEnuLatLonExpectValue" Id="{84ac00c5-743a-4fbd-b395-53e78229cb25}">
+      <Declaration><![CDATA[METHOD PRIVATE WhenTransformEnuLatLonExpectValue
+VAR_INPUT
+	
+END_VAR
+VAR
+	Psurf : GeoPosition;
+	Palt : GeoPosition;
+	Vsurf : Vector3;
+	Valt : Vector3;
+	Valt_surf : Vector3;
+	Hsurf : HMatrix;
+	Valt2 : Vector3;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('WhenTransformEnuLatLonExpectValue');
+
+// @TEST-RUN
+Psurf.SetFromComponentsDeg(10,10,0);
+Palt.SetFromComponentsDeg(PSurf.LatitudeDeg,PSurf.LongitudeDeg,1000);
 Valt_surf.SetFromComponents(0,0,Palt.Elevation);
 
 Vsurf := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(Psurf);
@@ -152,9 +195,9 @@ TEST_FINISHED();]]></ST>
       </Implementation>
     </Method>
     <LineIds Name="FB_GeoEllipsoid_Test">
-      <LineId Id="31" Count="0" />
-      <LineId Id="9" Count="0" />
-      <LineId Id="32" Count="1" />
+      <LineId Id="41" Count="2" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="44" Count="0" />
     </LineIds>
     <LineIds Name="FB_GeoEllipsoid_Test.WhenGetCartesianExpectValue">
       <LineId Id="5" Count="0" />
@@ -173,16 +216,21 @@ TEST_FINISHED();]]></ST>
       <LineId Id="5" Count="0" />
       <LineId Id="7" Count="1" />
       <LineId Id="11" Count="0" />
-      <LineId Id="33" Count="2" />
+      <LineId Id="33" Count="1" />
+      <LineId Id="100" Count="0" />
+      <LineId Id="35" Count="0" />
       <LineId Id="77" Count="1" />
       <LineId Id="36" Count="1" />
+      <LineId Id="102" Count="0" />
       <LineId Id="55" Count="0" />
       <LineId Id="79" Count="0" />
       <LineId Id="56" Count="1" />
+      <LineId Id="103" Count="0" />
       <LineId Id="12" Count="0" />
       <LineId Id="10" Count="0" />
       <LineId Id="19" Count="0" />
       <LineId Id="38" Count="1" />
+      <LineId Id="105" Count="0" />
       <LineId Id="81" Count="0" />
       <LineId Id="80" Count="0" />
       <LineId Id="13" Count="0" />
@@ -197,7 +245,22 @@ TEST_FINISHED();]]></ST>
       <LineId Id="21" Count="0" />
       <LineId Id="5" Count="0" />
     </LineIds>
-    <LineIds Name="FB_GeoEllipsoid_Test.WhenTransformEnuExpectValue">
+    <LineIds Name="FB_GeoEllipsoid_Test.WhenTransformEnuAltExpectValue">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="82" Count="1" />
+      <LineId Id="80" Count="1" />
+      <LineId Id="84" Count="1" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="6" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_GeoEllipsoid_Test.WhenTransformEnuLatLonExpectValue">
       <LineId Id="5" Count="0" />
       <LineId Id="7" Count="1" />
       <LineId Id="57" Count="0" />

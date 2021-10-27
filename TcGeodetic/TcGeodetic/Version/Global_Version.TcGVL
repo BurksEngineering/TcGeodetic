@@ -7,7 +7,7 @@
 // This function has been automatically generated from the project information.
 VAR_GLOBAL CONSTANT
 	{attribute 'const_non_replaced'}
-	stLibVersion_TcGeodetic : ST_LibVersion := (iMajor := 0, iMinor := 1, iBuild := 10, iRevision := 0, nFlags := 0, sVersion := '0.1.10');
+	stLibVersion_TcGeodetic : ST_LibVersion := (iMajor := 0, iMinor := 1, iBuild := 19, iRevision := 0, nFlags := 0, sVersion := '0.1.19');
 END_VAR
 ]]></Declaration>
   </GVL>

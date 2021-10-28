@@ -139,10 +139,20 @@ ELSE
 	AdjustedMag_2 := Magnitude_2 - Eccentricity_2;
 	SemiMinorConfocal_2 := 0.5*AdjustedMag_2 + 0.5*SQRT(EXPT(AdjustedMag_2,2) + 4*Eccentricity_2*V.Z*V.Z); //eq 4a from paper
 	SemiMajorConfocal_2 := SemiMinorConfocal_2 + Eccentricity_2;
-	TanGeocentricLatitude := (SQRT(SemiMajorConfocal_2) * V.Z) / (SQRT(SemiMinorConfocal_2)*SQRT(RadLatitude_2));
-	GeocentricLatitude := ATAN(TanGeocentricLatitude); //eq 6 from paper
+	IF SQRT(SemiMinorConfocal_2) / SQRT(SemiMajorConfocal_2) < 10E-10 THEN
+		//avoid divide by near zero when confocal is nearly flat and assumption of geocentric latidude equivalence atan(confocal) ~= atan(ellipsoid) stops being true
+		IF V.Z = 0 THEN
+			GeocentricLatitude := 0;
+		ELSE
+			GeocentricLatitude := PI/2 * V.Z/ABS(V.Z);
+		END_IF;
+		GetGeodeticFromCartesian.LatitudeRad := GeocentricLatitude;
+	ELSE
+		TanGeocentricLatitude := (SQRT(SemiMajorConfocal_2) * V.Z) / (SQRT(SemiMinorConfocal_2)*SQRT(RadLatitude_2));
+		GeocentricLatitude := ATAN(TanGeocentricLatitude); //eq 6 from paper
+		GetGeodeticFromCartesian.LatitudeRad := ATAN(SemiMajorAxis / SemiMinorAxis * TanGeocentricLatitude);
+	END_IF;
 	
-	GetGeodeticFromCartesian.LatitudeRad := ATAN(SemiMajorAxis / SemiMinorAxis * TanGeocentricLatitude);
 	GetGeodeticFromCartesian.Elevation := SQRT(EXPT(V.Z - SemiMinorAxis*SIN(GeocentricLatitude),2) + EXPT(SQRT(RadLatitude_2) - SemiMajorAxis*COS(GeocentricLatitude),2)); //eq 7 from paper
 
 END_IF]]></ST>
@@ -363,8 +373,16 @@ END_VAR
       <LineId Id="252" Count="0" />
       <LineId Id="248" Count="0" />
       <LineId Id="254" Count="0" />
+      <LineId Id="316" Count="1" />
+      <LineId Id="323" Count="1" />
+      <LineId Id="322" Count="0" />
+      <LineId Id="320" Count="0" />
+      <LineId Id="326" Count="0" />
+      <LineId Id="328" Count="0" />
+      <LineId Id="318" Count="0" />
       <LineId Id="302" Count="0" />
       <LineId Id="255" Count="0" />
+      <LineId Id="319" Count="0" />
       <LineId Id="257" Count="0" />
       <LineId Id="256" Count="0" />
       <LineId Id="258" Count="0" />

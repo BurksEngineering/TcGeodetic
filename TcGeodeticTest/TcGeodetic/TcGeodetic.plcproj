@@ -63,12 +63,6 @@
     </PlaceholderReference>
   </ItemGroup>
   <ItemGroup>
-    <LibraryReference Include="BASIC,3.31,OSCAT">
-      <Namespace>BASIC</Namespace>
-      <QualifiedOnly>true</QualifiedOnly>
-    </LibraryReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="TcGeodetic.tmc">
       <SubType>Content</SubType>
     </None>

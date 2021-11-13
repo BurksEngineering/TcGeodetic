@@ -109,6 +109,8 @@ VAR
 	SemiMajorConfocal_2 : LREAL;// 	'u^2' + E^2 from paper
 	TanGeocentricLatitude : LREAL;// tan(beta) 	from paper
 	GeocentricLatitude : LREAL;//   'beta' 		from paper
+	AxialElevation : LREAL;
+	RadialElevation : LREAL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[//stolen from : http://ir.lib.ncku.edu.tw/bitstream/987654321/39750/1/3011200501001.pdf
@@ -153,7 +155,13 @@ ELSE
 		GetGeodeticFromCartesian.LatitudeRad := ATAN(SemiMajorAxis / SemiMinorAxis * TanGeocentricLatitude);
 	END_IF;
 	
-	GetGeodeticFromCartesian.Elevation := SQRT(EXPT(V.Z - SemiMinorAxis*SIN(GeocentricLatitude),2) + EXPT(SQRT(RadLatitude_2) - SemiMajorAxis*COS(GeocentricLatitude),2)); //eq 7 from paper
+	AxialElevation := V.Z - SemiMinorAxis*SIN(GeocentricLatitude);
+	RadialElevation := SQRT(RadLatitude_2) - SemiMajorAxis*COS(GeocentricLatitude);
+	
+	GetGeodeticFromCartesian.Elevation := SQRT(AxialElevation*AxialElevation + RadialElevation*RadialElevation); //eq 7 from paper
+	IF AxialElevation < 0 AND RadialElevation < 0 THEN
+		GetGeodeticFromCartesian.Elevation := -1 * GetGeodeticFromCartesian.Elevation;
+	END_IF
 
 END_IF]]></ST>
       </Implementation>
@@ -385,7 +393,9 @@ END_VAR
       <LineId Id="319" Count="0" />
       <LineId Id="257" Count="0" />
       <LineId Id="256" Count="0" />
+      <LineId Id="344" Count="2" />
       <LineId Id="258" Count="0" />
+      <LineId Id="347" Count="2" />
       <LineId Id="265" Count="0" />
       <LineId Id="259" Count="0" />
     </LineIds>

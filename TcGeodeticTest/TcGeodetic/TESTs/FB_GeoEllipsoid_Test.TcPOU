@@ -93,10 +93,10 @@ PZ2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VZ);
 PXYZ2 := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(VXYZ);
 
 // @TEST-ASSERT
-AssertTrue(PX.IsNearlyEqual(PX2,1E-6), 'X axis check does not work');
-AssertTrue(PY.IsNearlyEqual(PY2,1E-6), 'Y axis check does not work');
-AssertTrue(PZ.IsNearlyEqual(PZ2,1E-6), 'Z axis check does not work');
-AssertTrue(PXYZ.IsNearlyEqual(PXYZ2,1E-6), 'Compound axis check does not work');
+AssertTrue(PX.IsNearlyEqual(PX2,1E-6,1E-3), 'X axis check does not work');
+AssertTrue(PY.IsNearlyEqual(PY2,1E-6,1E-3), 'Y axis check does not work');
+AssertTrue(PZ.IsNearlyEqual(PZ2,1E-6,1E-3), 'Z axis check does not work');
+AssertTrue(PXYZ.IsNearlyEqual(PXYZ2,1E-6,1E-3), 'Compound axis check does not work');
 
 AssertTrue(PX2b.LatitudeRad < 0, 'Small latitude perturbation does not work');
 

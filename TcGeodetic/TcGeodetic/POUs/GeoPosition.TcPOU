@@ -42,7 +42,7 @@ Elevation_ := 0;]]></ST>
     <Method Name="CopyFrom" Id="{f42538b2-5d5a-42d4-9831-f395b8a59545}" FolderPath="Setters\">
       <Declaration><![CDATA[METHOD PUBLIC CopyFrom
 VAR_INPUT
-	P : REFERENCE TO GeoPosition;
+	P : GeoPosition;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -73,31 +73,67 @@ END_VAR
     <Method Name="GetCartesianPosition" Id="{c912fb69-b38e-4243-9dfa-151630fe823b}" FolderPath="Helpers\">
       <Declaration><![CDATA[METHOD PUBLIC GetCartesianPosition : Vector3
 VAR_INPUT
-	Ref : REFERENCE TO GeoEllipsoid;
+	Ref : REFERENCE TO GeoEllipsoid := GeoEllipsoids.WGS84;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[GetCartesianPosition := Ref.GetCartesianFromGeodetic(THIS^);]]></ST>
+        <ST><![CDATA[IF NOT(__ISVALIDREF(Ref)) THEN
+	GetCartesianPosition := GeoEllipsoids.WGS84.GetCartesianFromGeodetic(THIS^);
+ELSE
+	GetCartesianPosition := Ref.GetCartesianFromGeodetic(THIS^);
+END_IF;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetRelativePosition" Id="{38805414-8032-4a19-a7fe-1523f39abb6b}" FolderPath="Helpers\">
+      <Declaration><![CDATA[//Gets the relative position of the supplied GeoPosition, considering this GeoPosition as an ENU tangent reference frame
+METHOD PUBLIC GetRelativePosition : Vector3
+VAR_INPUT
+	P : GeoPosition;
+	Ref : REFERENCE TO GeoEllipsoid := GeoEllipsoids.WGS84;
+END_VAR
+VAR
+	EnuInEcef : HMatrix;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[EnuInEcef := GetTangentEnuTransform(Ref);
+GetRelativePosition := EnuInEcef.GetTransformedVector3Reverse(P.GetCartesianPosition(Ref));]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetTangentEnuPose" Id="{fc67d3d8-12a4-46a3-8c72-f98a475d1072}" FolderPath="Helpers\">
+      <Declaration><![CDATA[METHOD PUBLIC GetTangentEnuPose : GeoPose
+VAR_INPUT
+	Ref : REFERENCE TO GeoEllipsoid := GeoEllipsoids.WGS84;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetTangentEnuPose.SetFromEcefTransformation(GetTangentEnuTransform(Ref),Ref);]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetTangentEnuRotation" Id="{0af28ec9-5cf4-4531-856b-f760d4432ef7}" FolderPath="Helpers\">
       <Declaration><![CDATA[METHOD PUBLIC GetTangentEnuRotation : RMatrix
 VAR_INPUT
-	Ref : REFERENCE TO GeoEllipsoid;
+	Ref : REFERENCE TO GeoEllipsoid := GeoEllipsoids.WGS84;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[GetTangentEnuRotation := Ref.GetTangentEnurotation(THIS^);]]></ST>
+        <ST><![CDATA[IF NOT(__ISVALIDREF(Ref)) THEN
+	GetTangentEnuRotation := GeoEllipsoids.WGS84.GetTangentEnurotation(THIS^);
+ELSE
+	GetTangentEnuRotation := Ref.GetTangentEnurotation(THIS^);
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetTangentEnuTransform" Id="{6c9c138d-3993-41c3-ad94-8f80f5c42f1b}" FolderPath="Helpers\">
       <Declaration><![CDATA[METHOD PUBLIC GetTangentEnuTransform : HMatrix
 VAR_INPUT
-	Ref : REFERENCE TO GeoEllipsoid;
+	Ref : REFERENCE TO GeoEllipsoid := GeoEllipsoids.WGS84;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[GetTangentEnuTransform := Ref.GetTangentEnuTransform(THIS^);]]></ST>
+        <ST><![CDATA[IF NOT(__ISVALIDREF(Ref)) THEN
+	GetTangentEnuTransform := GeoEllipsoids.WGS84.GetTangentEnuTransform(THIS^);
+ELSE
+	GetTangentEnuTransform := Ref.GetTangentEnuTransform(THIS^);
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="IsEqual" Id="{f18eb5d7-5a74-4649-8b7c-157f6655d827}" FolderPath="Comparators\">
@@ -107,20 +143,21 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IsEqual := IsNearlyEqual(P,0.0);]]></ST>
+        <ST><![CDATA[IsEqual := IsNearlyEqual(P,0.0,0.0);]]></ST>
       </Implementation>
     </Method>
     <Method Name="IsNearlyEqual" Id="{aa31bf7f-c28c-42b9-bc7f-9674c88e4763}" FolderPath="Comparators\">
       <Declaration><![CDATA[METHOD PUBLIC IsNearlyEqual : BOOL
 VAR_INPUT
 	P : REFERENCE TO GeoPosition;
-	Precision : LREAL;
+	PrecisionLatLon : LREAL;//radians
+	PrecisionElevation : LREAL;//meters
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IsNearlyEqual := ABS(P.LatitudeRad 		- LatitudeRad) 	<= Precision
-             AND ABS(P.LongitudeRad 	- LongitudeRad) <= Precision
-             AND ABS(P.Elevation 		- Elevation)	<= Precision;]]></ST>
+        <ST><![CDATA[IsNearlyEqual := ABS(P.LatitudeRad 		- LatitudeRad) 	<= PrecisionLatLon
+             AND ABS(P.LongitudeRad 	- LongitudeRad) <= PrecisionLatLon
+             AND ABS(P.Elevation 		- Elevation)	<= PrecisionElevation;]]></ST>
       </Implementation>
     </Method>
     <Property Name="LatitudeDeg" Id="{ca76519e-ec08-4b92-86d5-8bcb86ec81ef}" FolderPath="Properties\">
@@ -210,7 +247,11 @@ VAR
 	P : GeoPosition;
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[P := Ref.GetGeodeticFromCartesian(V);
+        <ST><![CDATA[IF NOT(__ISVALIDREF(Ref)) THEN
+	P := GeoEllipsoids.WGS84.GetGeodeticFromCartesian(V);
+ELSE
+	P := Ref.GetGeodeticFromCartesian(V);
+END_IF
 CopyFrom(P);]]></ST>
       </Implementation>
     </Method>
@@ -259,13 +300,25 @@ Elevation := El;]]></ST>
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="GeoPosition.GetCartesianPosition">
+      <LineId Id="10" Count="2" />
       <LineId Id="5" Count="0" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.GetRelativePosition">
+      <LineId Id="8" Count="0" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPosition.GetTangentEnuPose">
+      <LineId Id="9" Count="0" />
     </LineIds>
     <LineIds Name="GeoPosition.GetTangentEnuRotation">
       <LineId Id="5" Count="0" />
+      <LineId Id="10" Count="3" />
     </LineIds>
     <LineIds Name="GeoPosition.GetTangentEnuTransform">
+      <LineId Id="10" Count="0" />
       <LineId Id="5" Count="0" />
+      <LineId Id="11" Count="2" />
     </LineIds>
     <LineIds Name="GeoPosition.IsEqual">
       <LineId Id="5" Count="0" />
@@ -300,7 +353,9 @@ Elevation := El;]]></ST>
       <LineId Id="2" Count="0" />
     </LineIds>
     <LineIds Name="GeoPosition.SetFromCartesianPosition">
-      <LineId Id="13" Count="0" />
+      <LineId Id="21" Count="1" />
+      <LineId Id="24" Count="1" />
+      <LineId Id="23" Count="0" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="GeoPosition.SetFromComponentsDeg">

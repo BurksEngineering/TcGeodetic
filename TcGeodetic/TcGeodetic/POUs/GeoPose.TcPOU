@@ -1,0 +1,238 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.9">
+  <POU Name="GeoPose" Id="{22fd7b91-e379-4b48-b25b-7c3f882da5ab}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+Geographic Pose
+----------------
+
+Overview
+================
+Represents a coordinate system on a reference ellipsoid.
+Similar to the HMatrix transformation, but based on an ellipsoid instead of in cartesian space (helper functions are included to switch between HMatrix and GeoPose).
+Represents the geodetic (or geocentric) position with latitude, longitude, and elevation (above the ellipsoid) - Accessed with the 'Position' property.
+Represents the orientation as a set of angles relative to the ENU tangent coordinate system at the CS origin - Accessed with the 'Orientation' property.
+*)
+FUNCTION_BLOCK GeoPose
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	Position_ : GeoPosition;//ECEF
+	Orientation_ : TaitBryanAngleOrientation;//ENU at position
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Folder Name="Comparators" Id="{128afaf1-84d6-4df8-a22c-9d3f4b4940a4}" />
+    <Folder Name="Helpers" Id="{67e259ad-2bdb-48bf-a64f-ac35164c5381}" />
+    <Folder Name="Properties" Id="{997fd598-578a-47c3-a5a0-4cda164034ca}" />
+    <Folder Name="Setters" Id="{56adf730-714f-4820-85ec-55dba9a85f39}" />
+    <Method Name="Clear" Id="{ac1dee2d-66a0-48f3-805d-a8a5da1d833f}" FolderPath="Setters\">
+      <Declaration><![CDATA[METHOD PUBLIC Clear
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Position_.Clear();
+Orientation_.Clear();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="CopyFrom" Id="{dba523a8-541c-484d-aa76-3d7ae4f213a4}" FolderPath="Setters\">
+      <Declaration><![CDATA[METHOD PUBLIC CopyFrom
+VAR_INPUT
+	P : GeoPose;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Position_.CopyFrom(P.Position_);
+Orientation_.CopyFrom(P.Orientation_);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetEcefTransformation" Id="{e681c242-06fb-4148-88fe-37c56511e90a}" FolderPath="Helpers\">
+      <Declaration><![CDATA[METHOD PUBLIC GetEcefTransformation : HMatrix
+VAR_INPUT
+	Ref : REFERENCE TO GeoEllipsoid := GeoEllipsoids.WGS84;
+END_VAR
+VAR
+	EnuInEcef : HMatrix;//holds the geoposition part, and the tangent rotation
+	ThisInEnu : HMatrix;//just holds the local rotation portion
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[EnuInEcef := Position_.GetTangentEnuTransform(Ref);
+ThisInEnu.RMatrixComponent := Orientation_.GetRMatrix();
+GetEcefTransformation := EnuInEcef.GetTransformedHMatrix(ThisInEnu);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetRelativeOrientation" Id="{d190558d-a28b-485d-a2dd-6e0e06e2ef1c}" FolderPath="Helpers\">
+      <Declaration><![CDATA[METHOD PUBLIC GetRelativeOrientation : TaitBryanAngleOrientation
+VAR_INPUT
+	P : GeoPose;
+	Ref : REFERENCE TO GeoEllipsoid := GeoEllipsoids.WGS84;
+END_VAR
+VAR
+	ThisInEcef : HMatrix;
+	PinThis : HMatrix;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[ThisInEcef := GetEcefTransformation(Ref);
+PinThis := ThisInEcef.GetTransformedHMatrixReverse(P.GetEcefTransformation(Ref));
+GetRelativeOrientation.SetFromRMatrix(PinThis.RMatrixComponent);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetRelativePosition" Id="{7569a23a-af29-4f3c-a02f-18ac30d21f8f}" FolderPath="Helpers\">
+      <Declaration><![CDATA[METHOD PUBLIC GetRelativePosition : Vector3
+VAR_INPUT
+	P : GeoPose;
+	Ref : REFERENCE TO GeoEllipsoid := GeoEllipsoids.WGS84;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[GetRelativePosition := Position_.GetRelativePosition(P.Position,Ref);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="IsEqual" Id="{407842f3-df1e-4c43-b83b-80af1e674f13}" FolderPath="Comparators\">
+      <Declaration><![CDATA[METHOD PUBLIC IsEqual : BOOL
+VAR_INPUT
+	P : GeoPose;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IsEqual := IsNearlyEqual(P,0.0,0.0,0.0);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="IsNearlyEqual" Id="{d4e7d56a-e971-4ba6-989b-27514f27105d}" FolderPath="Comparators\">
+      <Declaration><![CDATA[METHOD PUBLIC IsNearlyEqual : BOOL
+VAR_INPUT
+	P : GeoPose;
+	PositionPrecisionLatLon : LREAL;//rad
+	PositionPrecisionElevation : LREAL;//m
+	OrientationPrecision : LREAL;//radians
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IsNearlyEqual := Position_.IsNearlyEqual(P.Position_, PositionPrecisionLatLon, PositionPrecisionElevation) AND Orientation_.IsNearlyEqual(P.Orientation_, OrientationPrecision);]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Orientation" Id="{1d991835-c59d-472a-9f50-c2009c261e0f}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY PUBLIC Orientation : TaitBryanAngleOrientation]]></Declaration>
+      <Get Name="Get" Id="{08d8e7ad-d8cc-4d59-93fd-4c65600b7bf3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Orientation.CopyFrom(Orientation_);]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{50610a45-4344-45ff-a9d7-6a21cdf93b88}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Orientation_.CopyFrom(Orientation);]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Position" Id="{97c7942e-3eae-40dd-8bd3-b21545263991}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY PUBLIC Position : GeoPosition]]></Declaration>
+      <Get Name="Get" Id="{2021bfe0-3706-444f-b949-eb89d2296220}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Position.CopyFrom(Position_);]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{5cf0345f-1fc2-4982-8bb0-50d9afb0185e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Position_.CopyFrom(Position);]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="SetFromComponents" Id="{f2babd1a-506a-402c-9541-fa8625b67834}" FolderPath="Setters\">
+      <Declaration><![CDATA[METHOD PUBLIC SetFromComponents
+VAR_INPUT
+	P : GeoPosition;
+	O : TaitBryanAngleOrientation;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Position_.CopyFrom(P);
+Orientation_.CopyFrom(O);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetFromEcefTransformation" Id="{3f187cfe-7854-444b-8e8e-cef8b71a29c5}" FolderPath="Setters\">
+      <Declaration><![CDATA[METHOD PUBLIC SetFromEcefTransformation
+VAR_INPUT
+	H : HMatrix;//ThisInEcef)
+	Ref : REFERENCE TO GeoEllipsoid := GeoEllipsoids.WGS84;
+END_VAR
+VAR
+	EnuInEcef : HMatrix;
+	ThisInEnu : HMatrix;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Clear();
+Position_.SetFromCartesianPosition(H.Vector3Component,Ref);
+EnuInEcef := Position_.GetTangentEnuTransform(Ref);
+ThisInEnu := EnuInEcef.GetTransformedHMatrixReverse(H);
+Orientation_.SetFromRMatrix(ThisInEnu.RMatrixComponent);
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="GeoPose">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.Clear">
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.CopyFrom">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.GetEcefTransformation">
+      <LineId Id="25" Count="1" />
+      <LineId Id="17" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.GetRelativeOrientation">
+      <LineId Id="5" Count="0" />
+      <LineId Id="13" Count="1" />
+    </LineIds>
+    <LineIds Name="GeoPose.GetRelativePosition">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.IsEqual">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.IsNearlyEqual">
+      <LineId Id="12" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.Orientation.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.Orientation.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.Position.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.Position.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.SetFromComponents">
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+    <LineIds Name="GeoPose.SetFromEcefTransformation">
+      <LineId Id="5" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="26" Count="1" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

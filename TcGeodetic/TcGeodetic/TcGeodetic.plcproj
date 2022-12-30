@@ -18,7 +18,7 @@
     <Company>Burks Engineering</Company>
     <Released>false</Released>
     <Title>TcGeodetic</Title>
-    <ProjectVersion>0.1.22</ProjectVersion>
+    <ProjectVersion>0.2.0</ProjectVersion>
     <LibraryCategories>
       <LibraryCategory xmlns="">
         <Id>{d5875a41-817d-44f3-8af7-6c59eaddc95f}</Id>
@@ -53,6 +53,10 @@
       <DefaultResolution>Tc2_System, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc2_System</Namespace>
     </PlaceholderReference>
+    <PlaceholderReference Include="TcMatrix">
+      <DefaultResolution>TcMatrix, * (Burks Engineering)</DefaultResolution>
+      <Namespace>TcMatrix</Namespace>
+    </PlaceholderReference>
     <PlaceholderReference Include="TcTransform">
       <DefaultResolution>TcTransform, * (Burks Engineering)</DefaultResolution>
       <Namespace>TcTransform</Namespace>
@@ -60,7 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <PlaceholderResolution Include="TcTransform">
-      <Resolution>TcTransform, 0.3.24 (Burks Engineering)</Resolution>
+      <Resolution>TcTransform, 0.3.32 (Burks Engineering)</Resolution>
     </PlaceholderResolution>
   </ItemGroup>
   <ItemGroup>
@@ -74,6 +78,9 @@
       <LinkAlways>true</LinkAlways>
     </Compile>
     <Compile Include="POUs\GeoEllipsoid.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\GeoPose.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\GeoPosition.TcPOU">

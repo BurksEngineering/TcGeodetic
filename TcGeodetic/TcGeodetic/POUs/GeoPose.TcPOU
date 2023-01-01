@@ -73,12 +73,12 @@ VAR_INPUT
 END_VAR
 VAR
 	ThisInEcef : HMatrix;
-	PinThis : HMatrix;
+	InputInThis : HMatrix;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[ThisInEcef := GetEcefTransformation(Ref);
-PinThis := ThisInEcef.GetTransformedHMatrixReverse(P.GetEcefTransformation(Ref));
-GetRelativeOrientation.SetFromRMatrix(PinThis.RMatrixComponent);]]></ST>
+InputInThis := ThisInEcef.GetTransformedHMatrixReverse(P.GetEcefTransformation(Ref));
+GetRelativeOrientation.SetFromRMatrix(InputInThis.RMatrixComponent);]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetRelativePosition" Id="{7569a23a-af29-4f3c-a02f-18ac30d21f8f}" FolderPath="Helpers\">
@@ -87,9 +87,15 @@ VAR_INPUT
 	P : GeoPose;
 	Ref : REFERENCE TO GeoEllipsoid := GeoEllipsoids.WGS84;
 END_VAR
-]]></Declaration>
+VAR
+	ThisInEcef : HMatrix;
+	InputInThis : HMatrix;
+END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[GetRelativePosition := Position_.GetRelativePosition(P.Position,Ref);]]></ST>
+        <ST><![CDATA[ThisInEcef := GetEcefTransformation(Ref);
+InputInThis := ThisInEcef.GetTransformedHMatrixReverse(P.GetEcefTransformation(Ref));
+GetRelativePosition := InputInThis.Vector3Component;
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="IsEqual" Id="{407842f3-df1e-4c43-b83b-80af1e674f13}" FolderPath="Comparators\">
@@ -204,6 +210,9 @@ Orientation_.SetFromRMatrix(ThisInEnu.RMatrixComponent);
       <LineId Id="13" Count="1" />
     </LineIds>
     <LineIds Name="GeoPose.GetRelativePosition">
+      <LineId Id="17" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="14" Count="0" />
       <LineId Id="5" Count="0" />
     </LineIds>
     <LineIds Name="GeoPose.IsEqual">

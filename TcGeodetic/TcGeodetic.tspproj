@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.20">
+<TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.22">
 	<Project ProjectGUID="{6F18718E-8CEC-4151-A349-34F0F50F009A}" Target64Bit="true" ShowHideConfigurations="#x106">
 		<Plc>
 			<Project GUID="{4BD7E55F-58A2-4096-BF06-64B0100BF3C2}" Name="TcGeodetic" PrjFilePath="TcGeodetic\TcGeodetic.plcproj" TmcFilePath="TcGeodetic\TcGeodetic.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e"/>
